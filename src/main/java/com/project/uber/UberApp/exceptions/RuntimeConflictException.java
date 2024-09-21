@@ -7,5 +7,4 @@ public class RuntimeConflictException extends RuntimeException {
         super(message);
     }
 
-
 }
