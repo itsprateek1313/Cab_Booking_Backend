@@ -4,45 +4,58 @@ import com.project.uber.UberApp.dto.DriverDto;
 import com.project.uber.UberApp.dto.RideDto;
 import com.project.uber.UberApp.dto.RideRequestDto;
 import com.project.uber.UberApp.dto.RiderDto;
+import com.project.uber.UberApp.entities.Driver;
 import com.project.uber.UberApp.entities.RideRequest;
 import com.project.uber.UberApp.entities.Rider;
 import com.project.uber.UberApp.entities.User;
 import com.project.uber.UberApp.entities.enums.RideRequestStatus;
+import com.project.uber.UberApp.exceptions.ResourceNotFoundException;
 import com.project.uber.UberApp.repositories.RideRequestRepository;
 import com.project.uber.UberApp.repositories.RiderRepository;
 import com.project.uber.UberApp.services.RiderService;
 import com.project.uber.UberApp.strategies.DriverMatchingStrategy;
 import com.project.uber.UberApp.strategies.RideFairCalculationStrategy;
+import com.project.uber.UberApp.strategies.RideStrategyManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class RiderServiceImpl implements RiderService {
 
     private final ModelMapper modelMapper;
-    private final RideFairCalculationStrategy rideFairCalculationStrategy;
-    private final DriverMatchingStrategy driverMatchingStrategy;
+    private final RideStrategyManager rideStrategyManager;
     private final RideRequestRepository rideRequestRepository;
     private final RiderRepository riderRepository;
 
 
     @Override
     public RideRequestDto requestRide(RideRequestDto rideRequestDto) {
-
+        Rider rider = getCurrentRider();
         RideRequest rideRequest = modelMapper.map(rideRequestDto, RideRequest.class);
         rideRequest.setRideRequestStatus(RideRequestStatus.PENDING);
-        Double fare = rideFairCalculationStrategy.calculateFare(rideRequest);
+        rideRequest.setRider(rider);
+
+        Double fare = rideStrategyManager.rideFareCalculationStrategy().calculateFare(rideRequest);
         rideRequest.setFare(fare);
+
         RideRequest savedRideRequest = rideRequestRepository.save(rideRequest);
 
-        driverMatchingStrategy.findMatchingDriver(rideRequest);
+        List<Driver> drivers = rideStrategyManager
+                .driverMatchingStrategy(rider.getRating()).findMatchingDriver(rideRequest);
+
+//        TODO : Send notification to all the drivers about this ride request
+
         return modelMapper.map(savedRideRequest, RideRequestDto.class);
+
+
     }
 
     @Override
@@ -73,4 +86,13 @@ public class RiderServiceImpl implements RiderService {
                 .build();
         return riderRepository.save(rider);
     }
+
+    @Override
+    public Rider getCurrentRider() {
+//        TODO : implement Spring security
+        return riderRepository.findById(1L).orElseThrow(() -> new ResourceNotFoundException(
+                "Rider not found with id: "+1
+        ));
+    }
+
 }

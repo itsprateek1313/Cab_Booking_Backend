@@ -14,13 +14,13 @@ import java.time.LocalDateTime;
 public class RideRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @Column(columnDefinition = "Geometry(Point, 4326)")
     private Point pickupLocation;
 
     @Column(columnDefinition = "Geometry(Point, 4326)")
-    private Point destinationLocation;
+    private Point dropOffLocation;
 
     @CreationTimestamp
     private LocalDateTime requestedTime;
@@ -35,5 +35,7 @@ public class RideRequest {
     private RideRequestStatus rideRequestStatus;
 
     private Double fare;
+
+
 }
 
