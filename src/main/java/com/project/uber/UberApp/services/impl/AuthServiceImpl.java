@@ -33,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public UserDto signup(SignupDto signupDto) {
         User user = userRepository.findByEmail(signupDto.getEmail()).orElse(null);
         if(user != null)

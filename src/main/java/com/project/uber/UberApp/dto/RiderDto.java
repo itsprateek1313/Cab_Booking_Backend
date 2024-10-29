@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 public class RiderDto {
     private UserDto user;
     private Double rating;
+    private Long id;
 }
